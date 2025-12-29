@@ -33,6 +33,7 @@ class OpenXIterableDataset(IterableDataset):
         use_raw_dataloader=False,
         fix_raw_length=None,
         vla_processor=None,
+        shuffle=True,
     ):
         super(OpenXIterableDataset, self).__init__()
         self.data_root_dir = data_root_dir
@@ -80,6 +81,7 @@ class OpenXIterableDataset(IterableDataset):
             traj_read_threads=len(mixture_spec) * read_thread_muti,
             train=self.is_train,
             shuffle_seed=3407 * self.current_rank,
+            shuffle=shuffle,
         )        
         self.rlds_config["frame_transform_kwargs"].update(
             {
@@ -121,7 +123,7 @@ class OpenXIterableDataset(IterableDataset):
     def multi_modal_get_item(self, data_item):
         pixel_values_seq = []
         
-        # TODO: add mutiple image inputs support (processor, model)
+        # TODO: add mutible image inputs support (processor, model)
         for image_primary in data_item["observation"]["image_primary"]:  # (t h w c)
             image = Image.fromarray(image_primary)
             pixel_values_seq += [image] # [c h w]

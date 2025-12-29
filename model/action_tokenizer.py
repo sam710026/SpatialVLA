@@ -52,6 +52,22 @@ class ActionTokenizer:
         ids = np.clip(ids, a_min=0, a_max=self._vocab_size - 1)
         return self.bin_centers[ids]
 
+    def encode_latent_actions(self, action_ids: np.ndarray) -> List[str]:
+        """Encode latent action indices to tokens.
+        action_ids: np.ndarray, (n, 4), latent action indices.
+        return: np.ndarray, (n, 4), tokens.
+        """
+        ids = np.clip(action_ids, a_min=0, a_max=self._vocab_size - 1)
+        return self.token_array[ids]
+
+    def decode_token_ids_to_latent_actions(self, action_token_id: np.ndarray) -> np.ndarray:
+        """decode token ids to latent action indices.
+        action_token_id: np.ndarray, (n, 4), token ids.
+        return: np.ndarray, (n, 4), latent action indices
+        """
+        ids = action_token_id - self.action_token_begin_idx
+        return ids
+
     @property
     def vocab_size(self) -> int:
         return self._vocab_size
@@ -429,3 +445,20 @@ class SpatialActionTokenizer:
             embeddings.weight.data[N:N+M] = torch.Tensor(adpt_rot_emb.reshape(-1, E), device=device).to(dtype)
             print("DONE! adapt spatial embedding to new gaussian distributation finished.")
             print(embeddings.weight.data)
+
+    def encode_latent_actions(self, action_ids: np.ndarray) -> List[str]:
+        """Encode latent action indices to tokens.
+        action_ids: np.ndarray, (n, 4), latent action indices.
+        return: np.ndarray, (n, 4), tokens.
+        """
+        flat_ids = action_ids.flatten()
+        tokens = [ACTION_TOKEN.format(int(i)) for i in flat_ids]
+        return np.array(tokens).reshape(action_ids.shape)
+
+    def decode_token_ids_to_latent_actions(self, action_token_id: np.ndarray) -> np.ndarray:
+        """decode token ids to latent action indices.
+        action_token_id: np.ndarray, (n, 4), token ids.
+        return: np.ndarray, (n, 4), latent action indices
+        """
+        ids = action_token_id - self.action_token_begin_idx
+        return ids

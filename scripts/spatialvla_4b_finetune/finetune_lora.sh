@@ -1,12 +1,15 @@
 set -x
 
-DEBUG=true
+# Load required modules for compilation
+module load gcc/11.5.0
+
+DEBUG=${DEBUG:-false}
 if [ "$DEBUG" = true ]; then
   GPUS=1
   GPUS_PER_NODE=1
   PER_DEVICE_BATCH_SIZE=2
   shuffle_buffer_size=2
-  mixture=bridge_orig
+  mixture=kuka_latent
   NUM_WORKERS=0
   TORCH_RUN_ARGS="--standalone --nnodes=1"
   save_steps=50
@@ -19,7 +22,7 @@ PER_DEVICE_BATCH_SIZE=${PER_DEVICE_BATCH_SIZE:-32}
 BATCH_SIZE=${BATCH_SIZE:-$((GPUS * PER_DEVICE_BATCH_SIZE))}
 GRADIENT_ACC=$((BATCH_SIZE / PER_DEVICE_BATCH_SIZE / GPUS))
 
-mixture=bridge_orig
+mixture=kuka_latent
 mixture=${mixture:-oxe_magic_soup_plus}
 NUM_WORKERS=${NUM_WORKERS:-1}
 shuffle_buffer_size=${shuffle_buffer_size:-8192} # large buffer for better shuffling, we use 131072 in pretrain
@@ -29,7 +32,7 @@ lora=32
 lora_alpha=32
 lora_target="linear"
 
-epoch=50
+epoch=${epoch:-50}
 save_steps=${save_steps:-10000}
 
 # ADAPT_ARGS="--adapt_emb scripts/new_gaussian.json" # use spatial embedding adaption
@@ -37,7 +40,7 @@ cur_time=$(date "+%H-%M-%S")
 date_dir=$(date "+%Y-%m-%d")
 
 # resume training from ckpt
-model_name_or_path=../pretrained/spatialvla-4b-224-pt
+model_name_or_path=/home/s110070016/ckp/spatialvla-4b-224-pt
 note=$(basename $model_name_or_path)_lr${lr}_bs${PER_DEVICE_BATCH_SIZE}_node$((GPUS / GPUS_PER_NODE))_gpu${GPUS}_r${lora}_a${lora_alpha}_ep${epoch}_${lora_target}
 OUTPUT_DIR=${resume_path:-outputs/spatialvla_4b_finetune/$date_dir/${cur_time}_${mixture}_${note}}
 mkdir -p $OUTPUT_DIR
@@ -60,13 +63,14 @@ torchrun $TORCH_RUN_ARGS \
   --lora_alpha ${lora_alpha} \
   --lora_target ${lora_target} \
   --ignore_data_skip True \
-  --data_root_dir /oss/vla_ptm_hwfile/DATA/open_x_embodiment_converted \
+  --data_root_dir /home/s110070016 \
   --data_mix ${mixture} \
+  --use_latent_action True \
   --shuffle_buffer_size ${shuffle_buffer_size} \
   --obs_backward_steps 0 \
   --obs_backward_delta 1 \
   --action_forward_steps 3 \
-  --flash_attn True \
+  --flash_attn False \
   --output_dir ${OUTPUT_DIR} \
   --overwrite_output_dir False \
   --freeze_vision_tower False \

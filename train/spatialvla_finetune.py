@@ -96,6 +96,10 @@ class ModelArguments:
         default=0.0,
         metadata={"help": "Set the minimum sigma for creating action grids."},
     )
+    use_latent_action: bool = field(
+        default=False,
+        metadata={"help": "Set to True to use latent action."},
+    )
 
 @dataclass
 class DataTrainingArguments:
@@ -198,6 +202,9 @@ def main():
     tokenizer = _processor.tokenizer
     torch_dtype = torch.bfloat16 if training_args.bf16 else torch.float32
     
+    if model_args.use_latent_action:
+        _processor.action_config["use_latent_action"] = True
+
     logger.info("Loading SpatialVLA Model...")
     config = SpatialVLAConfig.from_pretrained(model_args.model_name_or_path, torch_dtype=torch_dtype, local_files_only=True)
     model = SpatialVLAForConditionalGeneration.from_pretrained(

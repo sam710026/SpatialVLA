@@ -164,6 +164,32 @@ def kuka_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
     return trajectory
 
 
+def kuka_latent_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
+    trajectory["action"] = trajectory["action"]["latent_action"]
+    
+    # Debug print
+    # tf.print("Transform latent action:", trajectory["action"][:5])
+
+    # decode compressed state
+    eef_value = tf.io.decode_compressed(
+        trajectory["observation"]["clip_function_input/base_pose_tool_reached"],
+        compression_type="ZLIB",
+    )
+    eef_value = tf.io.decode_raw(eef_value, tf.float32)
+    trajectory["observation"]["clip_function_input/base_pose_tool_reached"] = (
+        tf.reshape(eef_value, (-1, 7))
+    )
+    gripper_value = tf.io.decode_compressed(
+        trajectory["observation"]["gripper_closed"], compression_type="ZLIB"
+    )
+    gripper_value = tf.io.decode_raw(gripper_value, tf.float32)
+    trajectory["observation"]["gripper_closed"] = tf.reshape(gripper_value, (-1, 1))
+    trajectory["language_instruction"] = trajectory["observation"][
+        "natural_language_instruction"
+    ]
+    return trajectory
+
+
 def taco_play_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
     trajectory["observation"]["state_eef"] = trajectory["observation"]["robot_obs"][
         :, :6
@@ -1015,6 +1041,7 @@ OXE_STANDARDIZATION_TRANSFORMS = {
     "ppgm_wrist/0.1.0": ppgm_dataset_transform,
     "fractal20220817_data/0.1.0": rt1_dataset_transform,
     "kuka/0.1.0": kuka_dataset_transform,
+    "kuka_latent/0.1.0": kuka_latent_dataset_transform,
     "taco_play/0.1.0": taco_play_dataset_transform,
     "jaco_play/0.1.0": jaco_play_dataset_transform,
     "berkeley_cable_routing/0.1.0": berkeley_cable_routing_dataset_transform,

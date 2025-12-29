@@ -309,19 +309,28 @@ def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=N
         gripper_action_accuracy = gripper_correct_preds.sum().float() / gripper_mask.sum().float()
 
         # convert to continue actions
-        gt_actions = inputs["actions"].reshape(-1, 7).to(device="cpu", dtype=torch.float32)
-        pred_actions = model.action_tokenizer.decode_token_ids_to_actions(pred_action_ids.cpu().numpy().reshape(-1, 3))
-        l1_loss = nn.functional.l1_loss(torch.tensor(pred_actions), torch.tensor(gt_actions))
+        try:
+            gt_actions = inputs["actions"].reshape(-1, 7).to(device="cpu", dtype=torch.float32)
+            pred_actions = model.action_tokenizer.decode_token_ids_to_actions(pred_action_ids.cpu().numpy().reshape(-1, 3))
+            l1_loss = nn.functional.l1_loss(torch.tensor(pred_actions), torch.tensor(gt_actions))
 
-        self.log(
-            {
-                "accuracy": action_accuracy.item(),
-                "translation_accuracy": translation_action_accuracy.item(),
-                "rotation_accuracy": rotation_action_accuracy.item(),
-                "gripper_accuracy": gripper_action_accuracy.item(),
-                "l1_loss": l1_loss.item(),
-            }
-        )
+            self.log(
+                {
+                    "loss": loss.item(),
+                    "accuracy": action_accuracy.item(),
+                    "translation_accuracy": translation_action_accuracy.item(),
+                    "rotation_accuracy": rotation_action_accuracy.item(),
+                    "gripper_accuracy": gripper_action_accuracy.item(),
+                    "l1_loss": l1_loss.item(),
+                }
+            )
+        except Exception:
+            self.log(
+                {
+                    "loss": loss.item(),
+                    "latent_accuracy": action_accuracy.item(),
+                }
+            )
 
     return (loss, outputs) if return_outputs else loss
 

@@ -7,6 +7,10 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
+DATASET_NAME_MAPPING = {
+    "kuka_latent/0.1.0": "kuka",
+}
+
 
 def make_oxe_dataset_kwargs(
     dataset_name: str,
@@ -22,9 +26,10 @@ def make_oxe_dataset_kwargs(
     if dataset_kwargs["action_encoding"] not in [
         ActionEncoding.EEF_POS,
         ActionEncoding.EEF_R6,
+        ActionEncoding.LATENT,
     ]:
         raise ValueError(
-            f"Cannot load `{dataset_name}`; only EEF_POS & EEF_R6 actions supported!"
+            f"Cannot load `{dataset_name}`; only EEF_POS & EEF_R6 & LATENT actions supported!"
         )
 
     # [Contract] For EEF_POS & EEF_R6 actions, only the last action dimension (gripper) is absolute!
@@ -35,6 +40,10 @@ def make_oxe_dataset_kwargs(
     elif dataset_kwargs["action_encoding"] is ActionEncoding.EEF_R6:
         dataset_kwargs["absolute_action_mask"] = [False] * 9 + [True]
         dataset_kwargs["action_normalization_mask"] = [True] * 9 + [False]
+    elif dataset_kwargs["action_encoding"] is ActionEncoding.LATENT:
+        dataset_kwargs["absolute_action_mask"] = [True] * 4
+        dataset_kwargs["action_normalization_mask"] = [False] * 4
+
     dataset_kwargs["action_proprio_normalization_type"] = (
         action_proprio_normalization_type
     )
@@ -83,7 +92,8 @@ def make_oxe_dataset_kwargs(
     if "aux_kwargs" in dataset_kwargs:
         dataset_kwargs.update(dataset_kwargs.pop("aux_kwargs"))
 
-    return {"name": dataset_name, "data_dir": str(data_root_dir), **dataset_kwargs}
+    real_name = DATASET_NAME_MAPPING.get(dataset_name, dataset_name)
+    return {"name": real_name, "data_dir": str(data_root_dir), **dataset_kwargs}
 
 
 def get_oxe_dataset_kwargs_and_weights(

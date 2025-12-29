@@ -116,7 +116,13 @@ class SpatialVLAProcessor(ProcessorMixin):
             **kwargs,
         )
         if suffix_actions is not None:
-            action_tokens = self.action_tokenizer(suffix_actions) # (n,3)
+            if isinstance(suffix_actions, torch.Tensor):
+                suffix_actions = suffix_actions.cpu().numpy()
+            
+            if self.action_config.get("use_latent_action", False):
+                action_tokens = self.action_tokenizer.encode_latent_actions(suffix_actions)
+            else:
+                action_tokens = self.action_tokenizer(suffix_actions) # (n,3)
             suffix="".join(action_tokens.flatten())
         else:
             suffix = output_kwargs["text_kwargs"].pop("suffix", None)
@@ -218,7 +224,11 @@ class SpatialVLAProcessor(ProcessorMixin):
         generation_outputs: torch.Tensor,
         unnorm_key: Optional[str] = None,
     ) -> Dict[str, torch.Tensor]:
-        action_token_num = 3  # translation + rotation + gripper
+        if self.action_config.get("use_latent_action", False):
+            action_token_num = 4 # latent action dim
+        else:
+            action_token_num = 3  # translation + rotation + gripper
+        
         predicted_action_token_ids = generation_outputs[0, : action_token_num * self.action_chunk_size].detach().cpu().long().numpy()
         assert self.tokenizer.eos_token != predicted_action_token_ids[-1], "[error] actions contain EOS token, please check you truncation settings!"
 
@@ -231,6 +241,11 @@ class SpatialVLAProcessor(ProcessorMixin):
                 ]
             )
         predicted_action_token_ids = predicted_action_token_ids.reshape(-1, action_token_num)
+        
+        if self.action_config.get("use_latent_action", False):
+            actions = self.action_tokenizer.decode_token_ids_to_latent_actions(predicted_action_token_ids)
+            return {"actions": actions, "action_ids": predicted_action_token_ids}
+
         normalized_action_chunks = self.action_tokenizer.decode_token_ids_to_actions(predicted_action_token_ids)
 
         if unnorm_key is None:

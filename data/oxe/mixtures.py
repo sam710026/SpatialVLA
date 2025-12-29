@@ -18,6 +18,10 @@ OXE_NAMED_MIXTURES: Dict[str, List[Tuple[str, float]]] = {
     "kuka": [
         ("kuka/0.1.0", 1.0),
     ],
+
+    "kuka_latent": [
+        ("kuka_latent/0.1.0", 1.0),
+    ],
     
     "droid": [
         ("droid/1.0.0", 1.0),
