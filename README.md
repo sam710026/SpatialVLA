@@ -1,4 +1,4 @@
-<div align="center">
+
 # SpatialVLA 4B LoRA Fine-tuning Guide
 
 This guide documents the process for fine-tuning the SpatialVLA-4B model using LoRA on the Kuka Latent dataset.
@@ -6,7 +6,6 @@ This guide documents the process for fine-tuning the SpatialVLA-4B model using L
 ## 1. Environment Setup
 
 Ensure you have the `spatialvla` conda environment activated:
-
 ```bash
 module load gcc/11.5.0
 source ~/miniconda3/etc/profile.d/conda.sh
@@ -94,7 +93,7 @@ ssh -L 6007:localhost:6007 s110070016@nano5.nchc.org.tw -p 22
 - **Training Code**: `train/spatialvla_finetune.py`
 - **Custom Logic**: `train/monkey_patch.py`
 
-
+<div align="center">
 # SpatialVLA: Exploring Spatial Representations for Visual-Language-Action Models (RSS 2025)
 A spatial-enhanced vision-language-action model trained on 1.1 Million real robot episodes. 🤗
 purely huggingFace-based, concise code with efficient performance.
