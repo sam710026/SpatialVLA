@@ -15,6 +15,9 @@ module load gcc/11.5.0
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate spatialvla
 
+# Change to project directory
+cd /home/s110070016/SpatialVLA
+
 # Create logs directory if it doesn't exist
 mkdir -p logs
 
@@ -23,7 +26,7 @@ export DEBUG=false
 export GPUS=1
 export GPUS_PER_NODE=1
 export PER_DEVICE_BATCH_SIZE=16  # Total batch size = 1 * 16 = 16
-export epoch=1                   # Run for 1 epoch
+export epoch=50                  # Run for 50 epochs (same as default in script)
 export save_steps=10000          # Save checkpoint every 10000 steps
 
 # Run the training script

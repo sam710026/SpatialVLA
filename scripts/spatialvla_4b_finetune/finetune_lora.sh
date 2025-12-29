@@ -15,11 +15,28 @@ if [ "$DEBUG" = true ]; then
   save_steps=50
 fi
 
+if [ -z "$GPUS" ]; then
+  if [ -n "$CUDA_VISIBLE_DEVICES" ]; then
+    GPUS=$(echo $CUDA_VISIBLE_DEVICES | tr ',' '\n' | wc -l)
+  elif command -v nvidia-smi &> /dev/null; then
+    GPUS=$(nvidia-smi -L | wc -l)
+  else
+    GPUS=1
+  fi
+fi
+
 GPUS=${GPUS:-8}
-GPUS_PER_NODE=${GPUS_PER_NODE:-8}
+GPUS_PER_NODE=${GPUS_PER_NODE:-$GPUS}
 NODES=$((GPUS / GPUS_PER_NODE))
 PER_DEVICE_BATCH_SIZE=${PER_DEVICE_BATCH_SIZE:-32}
 BATCH_SIZE=${BATCH_SIZE:-$((GPUS * PER_DEVICE_BATCH_SIZE))}
+
+echo "Training Configuration:"
+echo "  GPUS: $GPUS"
+echo "  GPUS_PER_NODE: $GPUS_PER_NODE"
+echo "  NODES: $NODES"
+echo "  BATCH_SIZE: $BATCH_SIZE"
+echo "  PER_DEVICE_BATCH_SIZE: $PER_DEVICE_BATCH_SIZE"
 GRADIENT_ACC=$((BATCH_SIZE / PER_DEVICE_BATCH_SIZE / GPUS))
 
 mixture=kuka_latent
@@ -53,6 +70,12 @@ export TF_CPP_MIN_LOG_LEVEL=3
 cp $(realpath "$0") ${OUTPUT_DIR}
 
 export LAUNCHER="pytorch"
+if [ -z "$MASTER_ADDR" ]; then
+  MASTER_ADDR="localhost"
+fi
+if [ -z "$MASTER_PORT" ]; then
+  MASTER_PORT="29500"
+fi
 TORCH_RUN_ARGS=${TORCH_RUN_ARGS:-"--nnodes $NODES --nproc-per-node $GPUS_PER_NODE --master_addr $MASTER_ADDR --master_port $MASTER_PORT"}
 
 torchrun $TORCH_RUN_ARGS \
