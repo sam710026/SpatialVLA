@@ -149,7 +149,10 @@ class DataTrainingArguments:
     )
 
 def main():
-    launcher = os.environ.get("LAUNCHER", "slurm")
+    if "SLURM_PROCID" in os.environ:
+        launcher = os.environ.get("LAUNCHER", "slurm")
+    else:
+        launcher = os.environ.get("LAUNCHER", "pytorch")  # torchrun / single-node ddp
     init_dist(launcher=launcher, backend="nccl")
     
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))

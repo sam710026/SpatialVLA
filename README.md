@@ -1,5 +1,99 @@
-<div align="center">
 
+# SpatialVLA 4B LoRA Fine-tuning Guide
+
+This guide documents the process for fine-tuning the SpatialVLA-4B model using LoRA on the Kuka Latent dataset.
+
+## 1. Environment Setup
+
+Ensure you have the `spatialvla` conda environment activated:
+```bash
+module load gcc/11.5.0
+source ~/miniconda3/etc/profile.d/conda.sh
+conda activate spatialvla
+```
+
+## 2. Dataset
+
+The training uses the `kuka_latent` dataset.
+- **Hugging Face Repo**: `eson0527/kuka_latent_100001`
+- **Local Path**: `/home/s110070016/kuka`
+- **Action Space**: 4-dimensional latent actions (requires `use_latent_action=True`).
+
+## 3. Running Training
+
+### Option A: Automated Slurm Job (Recommended)
+This method submits a job to the cluster queue. It runs in the background and is robust to connection drops.
+
+**Script**: `scripts/spatialvla_4b_finetune/run_slurm.sh`
+**Configuration**: 1 Node, 1 GPU, 50 Epochs.
+
+To submit the job:
+```bash
+sbatch scripts/spatialvla_4b_finetune/run_slurm.sh
+```
+
+To check job status:
+```bash
+squeue -u s110070016
+```
+
+To cancel a job:
+```bash
+scancel <JOB_ID>
+```
+
+### Option B: Interactive Mode
+Use this for debugging or short runs.
+
+1. Request resources:
+   ```bash
+   salloc --account=MST113264 --partition=dev --nodes=1 --gpus-per-node=1 --cpus-per-task=8 --time=02:00:00
+   ```
+
+2. Run the script:
+   ```bash
+   # Ensure you are in the project root
+   cd /home/s110070016/SpatialVLA
+   
+   # Set GPU count explicitly if needed
+   export GPUS=1
+   
+   # Run
+   bash scripts/spatialvla_4b_finetune/finetune_lora.sh
+   ```
+
+## 4. Monitoring with TensorBoard
+
+Logs are saved in `outputs/spatialvla_4b_finetune/YYYY-MM-DD/`.
+
+### Step 1: Start TensorBoard on Server
+In the VS Code terminal:
+```bash
+# Replace with your specific log directory
+tensorboard --logdir outputs/spatialvla_4b_finetune/2025-12-30 --port 6007 --bind_all
+```
+
+### Step 2: View on Local Machine
+1. Go to the **PORTS** tab in VS Code.
+2. Find port `6007`.
+3. Click the "Open in Browser" (globe icon).
+4.In local terminal
+```bash
+# Replace with your actual login details
+ssh -L 6007:localhost:6007 s110070016@nano5.nchc.org.tw -p 22
+```
+5. open `http://localhost:6007` in your browser.
+
+## 5. Key Files
+
+- **Entry Script**: `scripts/spatialvla_4b_finetune/finetune_lora.sh`
+  - Handles environment variables, GPU detection, and calls `torchrun`.
+- **Slurm Script**: `scripts/spatialvla_4b_finetune/run_slurm.sh`
+  - Slurm configuration for batch execution.
+- **Training Code**: `train/spatialvla_finetune.py`
+- **Custom Logic**: `train/monkey_patch.py`
+
+<div align="center">
 # SpatialVLA: Exploring Spatial Representations for Visual-Language-Action Models (RSS 2025)
 A spatial-enhanced vision-language-action model trained on 1.1 Million real robot episodes. 🤗
 purely huggingFace-based, concise code with efficient performance.
